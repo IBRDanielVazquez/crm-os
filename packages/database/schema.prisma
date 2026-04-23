@@ -33,6 +33,7 @@ model SubAccount {
   contacts       Contact[]
   pipelines      Pipeline[]
   appointments   Appointment[]
+  workflows      Workflow[]
   
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -132,6 +133,64 @@ model Appointment {
   
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+}
+
+// --- AUTOMATION MODULE ---
+model Workflow {
+  id           String            @id @default(uuid())
+  name         String
+  description  String?
+  active       Boolean           @default(false)
+  
+  subAccountId String
+  subAccount   SubAccount        @relation(fields: [subAccountId], references: [id])
+  
+  triggers     WorkflowTrigger[]
+  actions      WorkflowAction[]
+  executions   WorkflowExecution[]
+  
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model WorkflowTrigger {
+  id         String   @id @default(uuid())
+  type       String   // e.g., "CONTACT_CREATED", "OPPORTUNITY_STAGE_CHANGED"
+  config     Json     // e.g., { stageId: "xxx" }
+  
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model WorkflowAction {
+  id         String   @id @default(uuid())
+  type       String   // e.g., "SEND_EMAIL", "ADD_TAG", "CREATE_OPPORTUNITY"
+  config     Json
+  order      Int
+  
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model WorkflowExecution {
+  id         String   @id @default(uuid())
+  status     String   @default("RUNNING") // RUNNING, COMPLETED, FAILED
+  
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  
+  contactId  String
+  
+  currentStep Int      @default(0)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 // --- SYSTEM LOGS & AUDIT ---
