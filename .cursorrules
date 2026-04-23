@@ -1,0 +1,24 @@
+# Cursor Rules for CRM-OS (SaaS Platform)
+
+Follow these rules for all development tasks in this project.
+
+## 🏗 Architectural Rules (SaaS Multi-tenant)
+- **Tenant Isolation**: Every database query MUST include a `subaccount_id` or `organization_id` filter. Never fetch data globally.
+- **Modular Layering**: Strictly separate routes, controllers, services, and repositories in the backend.
+- **API Standards**: All API responses must follow:
+  ```json
+  { "success": true, "message": "...", "data": { ... } }
+  ```
+
+## 💻 Technical Stack
+- **Frontend**: React, Vite, TypeScript, Tailwind, Zustand.
+- **Backend**: Node.js, Express, TypeScript, Prisma.
+- **Database**: PostgreSQL.
+
+## 🛡 Security & Validation
+- Use Zod for schema validation on every request (DTOs).
+- Implement RBAC (Role-Based Access Control) using the `Role` enum in Prisma.
+- Sensitive data must be handled via `.env`.
+
+## 🧰 Specialized Skills
+Use `@13-gohighlevel-architect` for strategic decisions about CRM, Automations, and White-label features.

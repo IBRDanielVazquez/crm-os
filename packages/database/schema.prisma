@@ -1,0 +1,147 @@
+// schema.prisma - Core Multi-tenant SaaS Architecture (HighLevel Style)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- MASTER ORGANIZATIONS (Agencies/Top Level) ---
+model Organization {
+  id            String       @id @default(uuid())
+  name          String
+  logoUrl       String?
+  whiteLabel    Boolean      @default(false)
+  domain        String?      @unique
+  subAccounts   SubAccount[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// --- SUBACCOUNTS (Tenants/Business Units) ---
+model SubAccount {
+  id             String       @id @default(uuid())
+  name           String
+  address        String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  users          User[]
+  contacts       Contact[]
+  pipelines      Pipeline[]
+  appointments   Appointment[]
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// --- USERS & ROLES ---
+enum Role {
+  SUPER_ADMIN
+  ORG_ADMIN
+  SUBACCOUNT_ADMIN
+  SUBACCOUNT_USER
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  password     String
+  name         String
+  role         Role        @default(SUBACCOUNT_USER)
+  
+  subAccountId String?
+  subAccount   SubAccount? @relation(fields: [subAccountId], references: [id])
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+// --- CRM MODULE ---
+model Contact {
+  id           String      @id @default(uuid())
+  name         String
+  email        String
+  phone        String?
+  tags         String[]
+  
+  subAccountId String
+  subAccount   SubAccount  @relation(fields: [subAccountId], references: [id])
+  
+  opportunities Opportunity[]
+  activityLogs  ActivityLog[]
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([email, subAccountId]) // Email must be unique per subaccount
+}
+
+model Pipeline {
+  id           String      @id @default(uuid())
+  name         String
+  subAccountId String
+  subAccount   SubAccount  @relation(fields: [subAccountId], references: [id])
+  stages       Stage[]
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Stage {
+  id         String      @id @default(uuid())
+  name       String
+  order      Int
+  pipelineId String
+  pipeline   Pipeline    @relation(fields: [pipelineId], references: [id])
+  opportunities Opportunity[]
+  
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Opportunity {
+  id         String   @id @default(uuid())
+  name       String
+  value      Float?
+  status     String   @default("OPEN") // OPEN, WON, LOST
+  
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id])
+  
+  stageId    String
+  stage      Stage    @relation(fields: [stageId], references: [id])
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// --- CALENDAR MODULE ---
+model Appointment {
+  id           String      @id @default(uuid())
+  title        String
+  startTime    DateTime
+  endTime      DateTime
+  status       String      @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  
+  subAccountId String
+  subAccount   SubAccount  @relation(fields: [subAccountId], references: [id])
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+// --- SYSTEM LOGS & AUDIT ---
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  
+  createdAt DateTime @default(now())
+}

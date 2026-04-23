@@ -1,0 +1,16 @@
+{
+  "name": "crm-os",
+  "version": "1.0.0",
+  "description": "Multi-tenant SaaS Platform (HighLevel Style)",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "db:migrate": "npm run migrate --workspace @crm-os/database",
+    "db:studio": "npm run studio --workspace @crm-os/database"
+  }
+}
